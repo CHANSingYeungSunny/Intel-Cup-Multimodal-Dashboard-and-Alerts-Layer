@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useSocket from './hooks/useSocket';
 import useApi from './hooks/useApi';
 import { ENDPOINTS } from './utils/api';
@@ -19,10 +19,12 @@ export default function App() {
   // force child components to remount on experiment change
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // On mount, set experiment from API
+  // Only sync experiment ID from API on initial load, not on every refetch
+  const initialSyncDone = useRef(false);
   useEffect(() => {
-    if (experimentsData?.active_experiment_id) {
+    if (!initialSyncDone.current && experimentsData?.active_experiment_id) {
       setActiveExperimentId(experimentsData.active_experiment_id);
+      initialSyncDone.current = true;
     }
   }, [experimentsData]);
 
