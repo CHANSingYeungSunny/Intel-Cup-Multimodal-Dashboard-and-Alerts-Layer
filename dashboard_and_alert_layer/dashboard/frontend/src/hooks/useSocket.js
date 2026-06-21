@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5000';
+// Same-origin: proxied through React dev server (port 3000) in dev,
+// or served directly by Flask (port 5000) in production.
+const SOCKET_URL = '';
 
 export default function useSocket() {
   const socketRef = useRef(null);
