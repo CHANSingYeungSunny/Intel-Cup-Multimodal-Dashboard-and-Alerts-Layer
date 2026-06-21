@@ -12,10 +12,19 @@ export const ENDPOINTS = {
   featureViz: `${API_BASE}/api/feature_viz`,
   experiments: `${API_BASE}/api/experiments`,
   experiment: (id) => `${API_BASE}/api/experiments/${id}`,
+  switchExperiment: (id) => `${API_BASE}/api/experiments/switch/${id}`,
 };
 
 export async function fetchJSON(url) {
   const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function postJSON(url) {
+  const res = await fetch(url, { method: 'POST' });
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useSocket from './hooks/useSocket';
 import useApi from './hooks/useApi';
-import { ENDPOINTS } from './utils/api';
+import { ENDPOINTS, postJSON } from './utils/api';
 import SystemStatusBar from './components/SystemStatusBar';
 import ExperimentSelector from './components/ExperimentSelector';
 import Dashboard from './components/Dashboard';
@@ -35,16 +35,21 @@ export default function App() {
     }
   }, [socket.lastAlert]);
 
-  const handleExperimentChange = useCallback((expId) => {
+  const handleExperimentChange = useCallback(async (expId) => {
     setActiveExperimentId(expId);
-    socket.emit('set_experiment', { experiment_id: expId });
-    // Allow backend to switch, then refetch ALL data
-    setTimeout(() => {
-      refetchHealth();
-      refetchDisease();
-      refetchExperiments();
-      setRefreshKey((k) => k + 1);
-    }, 300);
+    // Switch via REST first (reliable), then notify via socket
+    try {
+      await postJSON(ENDPOINTS.switchExperiment(expId));
+    } catch (e) {
+      // Fallback: try socket if REST fails
+      socket.emit('set_experiment', { experiment_id: expId });
+      await new Promise((r) => setTimeout(r, 300));
+    }
+    // Refetch ALL data now that backend has switched
+    refetchHealth();
+    refetchDisease();
+    refetchExperiments();
+    setRefreshKey((k) => k + 1);
   }, [socket, refetchHealth, refetchDisease, refetchExperiments]);
 
   const handleTestAlert = () => {

@@ -36,3 +36,17 @@ def get_experiment(exp_id):
                 clean[k] = str(v)
 
     return jsonify(clean)
+
+
+@experiment_bp.route("/api/experiments/switch/<int:exp_id>", methods=["POST"])
+def switch_experiment(exp_id):
+    """Switch the active experiment via REST."""
+    ok = store.set_active_experiment(exp_id)
+    if not ok:
+        return jsonify({"error": f"Experiment {exp_id} not found"}), 404
+    exp = store.get_experiment(exp_id)
+    return jsonify({
+        "success": True,
+        "active_experiment_id": exp_id,
+        "label": exp.get("config_label", "") if exp else "",
+    })
