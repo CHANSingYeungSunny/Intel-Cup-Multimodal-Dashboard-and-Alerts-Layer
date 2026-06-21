@@ -87,13 +87,15 @@ class DataStore:
         return records
 
     def get_counts(self):
-        """Return per-class counts and percentages."""
+        """Return per-class counts and percentages (always shows all 3 classes
+        since predictions.csv is always 3-class)."""
         preds = self._predictions_df["prediction"].value_counts().to_dict()
         labels = self._predictions_df["label"].value_counts().to_dict()
         total = len(self._predictions_df)
 
-        pred_counts = {LABEL_NAMES.get(k, str(k)): preds.get(k, 0) for k in range(self._num_classes)}
-        label_counts = {LABEL_NAMES.get(k, str(k)): labels.get(k, 0) for k in range(self._num_classes)}
+        # Always show all 3 classes for health state display
+        pred_counts = {LABEL_NAMES.get(k, str(k)): preds.get(k, 0) for k in range(3)}
+        label_counts = {LABEL_NAMES.get(k, str(k)): labels.get(k, 0) for k in range(3)}
         pred_pct = {k: round(v / total * 100, 1) for k, v in pred_counts.items()}
         label_pct = {k: round(v / total * 100, 1) for k, v in label_counts.items()}
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import useSocket from './hooks/useSocket';
 import useApi from './hooks/useApi';
 import { ENDPOINTS } from './utils/api';
@@ -8,14 +8,16 @@ import Dashboard from './components/Dashboard';
 
 export default function App() {
   const socket = useSocket();
-  const { data: experimentsData } = useApi(ENDPOINTS.experiments);
+  const { data: experimentsData, refetch: refetchExperiments } = useApi(ENDPOINTS.experiments);
   const { data: healthData, refetch: refetchHealth } = useApi(ENDPOINTS.healthState);
-  const { data: diseaseData } = useApi(ENDPOINTS.diseaseClassification);
+  const { data: diseaseData, refetch: refetchDisease } = useApi(ENDPOINTS.diseaseClassification);
 
   const [activeExperimentId, setActiveExperimentId] = useState(1);
   const [alertLog, setAlertLog] = useState([]);
   const [simSpeed, setSimSpeed] = useState(1);
   const [simPaused, setSimPaused] = useState(false);
+  // force child components to remount on experiment change
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // On mount, set experiment from API
   useEffect(() => {
@@ -31,14 +33,17 @@ export default function App() {
     }
   }, [socket.lastAlert]);
 
-  const handleExperimentChange = (expId) => {
+  const handleExperimentChange = useCallback((expId) => {
     setActiveExperimentId(expId);
     socket.emit('set_experiment', { experiment_id: expId });
-    // Refetch data after a short delay
+    // Allow backend to switch, then refetch ALL data
     setTimeout(() => {
       refetchHealth();
+      refetchDisease();
+      refetchExperiments();
+      setRefreshKey((k) => k + 1);
     }, 300);
-  };
+  }, [socket, refetchHealth, refetchDisease, refetchExperiments]);
 
   const handleTestAlert = () => {
     socket.emit('request_alert_test');
@@ -85,6 +90,7 @@ export default function App() {
         </div>
       </div>
       <Dashboard
+        key={refreshKey}
         healthData={healthData}
         diseaseData={diseaseData}
         lastHealthUpdate={socket.lastHealthUpdate}
